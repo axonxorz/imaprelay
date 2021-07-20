@@ -56,6 +56,25 @@ To supply a custom path to the config file, use::
     
     imaprelay -c /path/to/config.cfg
 
+To run as a service with systemd, a simple service will do the trick:
+
+```
+[Unit]
+Description=Imap email relay
+
+[Service]
+Type=simple
+ExecStart=imaprelay -v -c {{path_to_config}}
+Restart=always
+RestartSec=30
+StandardOutput=file:/var/log/imaprelay.log
+StandardError=file:/var/log/imaprelay.log
+SyslogIdentifier=imaprelay
+
+[Install]
+WantedBy=multi-user.target
+```
+
 Bug reporting
 *************
 

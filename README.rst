@@ -19,6 +19,7 @@ By default, this program will look for a configuration file in
 ``~/.secret/imaprelay.cfg`` -- its location should indicate that it needs
 to contain plain-text passwords for IMAP and SMTP servers, and thus the
 program will exit immediately if the file is group- or world-readable.
+Alternatively, a path to the configuration file can be provided with the ``-c``.
 
 The available configuration options are listed below::
 
@@ -50,6 +51,10 @@ Once you've written a config file, all you need to do is run::
 For verbose logging, use::
 
     imaprelay -v
+
+To supply a custom path to the config file, use::
+    
+    imaprelay -c /path/to/config.cfg
 
 Bug reporting
 *************

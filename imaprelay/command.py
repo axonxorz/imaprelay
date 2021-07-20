@@ -22,8 +22,11 @@ interval=30
 def main():
     if '-v' in sys.argv:
         log.setLevel(logging.DEBUG)
-
-    configfile = os.path.expanduser('~/.secret/imaprelay.cfg')
+    if '-c' in sys.argv:
+        configfile = sys.argv[sys.argv.index("-c")+1]
+    else:
+        configfile = os.path.expanduser('~/.secret/imaprelay.cfg')
+    log.info("Config loaded from {}".format(configfile))
 
     st = os.stat(configfile)
     if bool(st.st_mode & (stat.S_IRGRP | stat.S_IROTH)):

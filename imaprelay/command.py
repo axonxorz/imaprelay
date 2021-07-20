@@ -1,11 +1,12 @@
-import ConfigParser
+import configparser
 import logging
 import os
 import stat
 import sys
-
-from StringIO import StringIO
-
+try:
+    from StringIO import StringIO
+except:
+    from io import StringIO
 from . import connection
 from . import relay
 
@@ -30,7 +31,7 @@ def main():
                         "world-readable. Please `chmod 400` or similar."
                         % configfile)
 
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.readfp(StringIO(DEFAULT_CONFIG))
     config.read([configfile])
 

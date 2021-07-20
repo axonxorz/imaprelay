@@ -51,7 +51,7 @@ class Relay(object):
         # Take BATCH_SIZE messages and relay them
         def get_next_slice():
             data = self._chk(self.imap.search(None, 'ALL'))
-            msg_ids = [x for x in data[0].split(' ') if x != '']
+            msg_ids = [x for x in data[0].decode().split(' ') if x != '']
             msg_slice, msg_ids = msg_ids[:BATCH_SIZE], msg_ids[BATCH_SIZE:]
             return msg_slice
 
@@ -71,7 +71,8 @@ class Relay(object):
 
         for response_part in msg_data:
             if isinstance(response_part, tuple):
-                eml = email.message_from_string(response_part[1])
+                eml = email.message_from_bytes(response_part[1])
+
                 res = self.smtp.sendmail(eml['from'], self.to, eml.as_string())
 
                 log.debug("Sent message '{subj}' from {from_} to {to}".format(from_=eml['from'],

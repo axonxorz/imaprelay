@@ -56,6 +56,21 @@ To supply a custom path to the config file, use::
     
     imaprelay -c /path/to/config.cfg
 
+Autoreply
+**************
+There is now limited support for autoreply. To use it, the following options
+need to be set in the config file::
+
+[smtp]
+# The sender address used for autoreply
+address=smtp@address
+
+[relay]
+# Enable autorespond
+autorespond=yes
+# Autorespond message, new lines must be escaped.
+autorespond_text=Dear sender,\n\nThank you for your email. This email address is no longer valid. Your message will be redirected to bauer@bio.tu-darmstadt.de.\n\nSincerely,\nDaniel Bauer
+
 Bug reporting
 *************
 

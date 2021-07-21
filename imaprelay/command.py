@@ -17,6 +17,8 @@ DEFAULT_CONFIG = """\
 inbox=INBOX
 archive=Archive
 interval=30
+autorespond=False
+autorespond_text=""
 """
 
 def main():
@@ -42,6 +44,9 @@ def main():
 
     rly = relay.Relay(config.get('relay', 'to'),
                       config.get('relay', 'inbox'),
-                      config.get('relay', 'archive'))
-
+                      config.get('relay', 'archive'),
+                      config.getboolean('relay', 'autorespond'),
+                      config.get('relay', 'autorespond_text'),
+                      config.get('smtp', 'address'))
+    
     rly.loop(int(config.get('relay', 'interval')))

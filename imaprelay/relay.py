@@ -4,7 +4,9 @@ import smtplib
 import socket
 import logging
 import time
-
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.utils import make_msgid
 from .import util
 from .connection import make_imap_connection, make_smtp_connection
 
@@ -19,10 +21,13 @@ class IMAPError(RelayError):
     pass
 
 class Relay(object):
-    def __init__(self, to, inbox, archive):
+    def __init__(self, to, inbox, archive, autorespond=False, autorespond_text=None, smtp_address=None):
         self.to = to
         self.inbox = inbox
         self.archive = archive
+        self.autorespond = autorespond
+        self.autorespond_text = autorespond_text
+        self.smtp_address = smtp_address
 
     def relay(self):
         try:
@@ -57,10 +62,13 @@ class Relay(object):
 
         msg_slice = get_next_slice()
         while msg_slice:
+            if self.autorespond:
+                self._autorespond(msg_slice)
             self._relay_messages(msg_slice)
             msg_slice = get_next_slice()
 
         return True
+
 
     def _relay_messages(self, message_ids):
         log.debug("Relaying messages {0}".format(message_ids))
@@ -87,6 +95,32 @@ class Relay(object):
 
         # Expunge
         self._chk(self.imap.expunge())
+
+    def _autorespond(self, message_ids):
+        log.debug("Autoresponding messages {0}".format(message_ids))
+
+        # Get messages and relay them
+        message_ids = ','.join(message_ids)
+        msg_data = self._chk(self.imap.fetch(message_ids, '(RFC822)'))
+
+        for response_part in msg_data:
+            if isinstance(response_part, tuple):
+                eml = email.message_from_bytes(response_part[1])
+                autoreply = MIMEMultipart('alternative')
+                autoreply['Message-ID'] = make_msgid()
+                autoreply['References'] = eml['Message-ID']
+                autoreply['In-Reply-To'] = eml['Message-ID']
+                autoreply['Subject'] = f"Re: {eml['Subject']}"
+                autoreply['From'] = self.smtp_address
+                autoreply['To'] = eml['Reply-To'] or eml['From']
+                autoreply.attach(MIMEText(self.autorespond_text.replace("\\n", "\n"), 'plain'))
+                print(autoreply)
+                res = self.smtp.sendmail(autoreply['From'], autoreply['To'], autoreply.as_bytes())
+
+                log.debug("Sent autorespond message '{subj}' from {from_} to {to}".format(
+                    from_=autoreply['From'],
+                    to=autoreply['To'],
+                    subj=autoreply['Subject']))
 
     def loop(self, interval=30):
         try:

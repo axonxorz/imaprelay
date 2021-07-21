@@ -114,7 +114,6 @@ class Relay(object):
                 autoreply['From'] = self.smtp_address
                 autoreply['To'] = eml['Reply-To'] or eml['From']
                 autoreply.attach(MIMEText(self.autorespond_text.replace("\\n", "\n"), 'plain'))
-                print(autoreply)
                 res = self.smtp.sendmail(autoreply['From'], autoreply['To'], autoreply.as_bytes())
 
                 log.debug("Sent autorespond message '{subj}' from {from_} to {to}".format(

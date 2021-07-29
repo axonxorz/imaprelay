@@ -88,13 +88,13 @@ class Relay(object):
                                                                               subj=eml['subject']))
 
         # Copy messages to archive folder
-        self._chk(self.imap.copy(message_ids, self.archive))
+        # self._chk(self.imap.copy(message_ids, self.archive))
 
         # Mark messages as deleted on server
-        self._chk(self.imap.store(message_ids, '+FLAGS', r'(\Deleted)'))
+        # self._chk(self.imap.store(message_ids, '+FLAGS', r'(\Deleted)'))
 
         # Expunge
-        self._chk(self.imap.expunge())
+        # self._chk(self.imap.expunge())
 
     def _autorespond(self, message_ids):
         log.debug("Autoresponding messages {0}".format(message_ids))
@@ -114,12 +114,14 @@ class Relay(object):
                 autoreply['From'] = self.smtp_address
                 autoreply['To'] = eml['Reply-To'] or eml['From']
                 autoreply.attach(MIMEText(self.autorespond_text.replace("\\n", "\n"), 'plain'))
-                res = self.smtp.sendmail(autoreply['From'], autoreply['To'], autoreply.as_bytes())
-
-                log.debug("Sent autorespond message '{subj}' from {from_} to {to}".format(
-                    from_=autoreply['From'],
-                    to=autoreply['To'],
-                    subj=autoreply['Subject']))
+                try:
+                    res = self.smtp.sendmail(autoreply['From'], autoreply['To'], autoreply.as_bytes())
+                    log.debug("Sent autorespond message '{subj}' from {from_} to {to}".format(
+                        from_=autoreply['From'],
+                        to=autoreply['To'],
+                        subj=autoreply['Subject']))
+                except Exception as e:
+                    log.error("Failed to autoreply to {to}. Maybe its a noreply address? {e}".format(to=autoreply['To'], e=e))
 
     def loop(self, interval=30):
         try:

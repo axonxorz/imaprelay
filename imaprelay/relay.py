@@ -3,6 +3,7 @@ import imaplib
 import smtplib
 import socket
 import logging
+import datetime
 import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -21,13 +22,19 @@ class IMAPError(RelayError):
     pass
 
 class Relay(object):
-    def __init__(self, to, inbox, archive, autorespond=False, autorespond_text=None, smtp_address=None):
+    def __init__(self, to, inbox, archive, autorespond=False,
+                 autorespond_text=None, smtp_address=None,
+                 rate_limit_active=True, rate_limit=5):
         self.to = to
         self.inbox = inbox
         self.archive = archive
         self.autorespond = autorespond
         self.autorespond_text = autorespond_text
         self.smtp_address = smtp_address
+        self.rate_limit_active = rate_limit_active
+        self.start_rate_period = datetime.datetime.now()
+        self.rate_counter = 0
+        self.rate_limit = rate_limit  # Reply mails per minute
 
     def relay(self):
         try:
@@ -96,6 +103,23 @@ class Relay(object):
         # Expunge
         # self._chk(self.imap.expunge())
 
+    def _check_rate_limit(self):
+        interval = datetime.timedelta(minutes=1)
+        time_delta = datetime.datetime.now() - self.start_rate_period
+        if time_delta < interval:
+            if self.rate_counter < self.rate_limit:
+                log.debug("No rate limit, only {num} messages sent this period".format(num=self.rate_counter))
+                self.rate_counter += 1
+                return True
+            else:
+                log.debug("Reply blocked, rate this period exceeded")
+                return False
+        else:
+            self.start_rate_period = datetime.datetime.now()
+            log.debug("No rate limit, only 0  messages sent this period")
+            self.rate_counter = 1
+            return True
+
     def _autorespond(self, message_ids):
         log.debug("Autoresponding messages {0}".format(message_ids))
 
@@ -114,6 +138,11 @@ class Relay(object):
                 autoreply['From'] = self.smtp_address
                 autoreply['To'] = eml['Reply-To'] or eml['From']
                 autoreply.attach(MIMEText(self.autorespond_text.replace("\\n", "\n"), 'plain'))
+                if self.rate_limit_active:
+                    if self._check_rate_limit():
+                        pass
+                    else:
+                        break
                 try:
                     res = self.smtp.sendmail(autoreply['From'], autoreply['To'], autoreply.as_bytes())
                     log.debug("Sent autorespond message '{subj}' from {from_} to {to}".format(

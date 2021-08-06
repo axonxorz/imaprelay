@@ -71,6 +71,10 @@ need to be set in the config file::
     autorespond=yes
     # Autorespond message, new lines must be escaped.
     autorespond_text=Dear sender,\n\nThank you for your email. This email address is no longer valid. Your message will be forwarded.
+    # Enable rate limiting
+    rate_limit_active=yes
+    # Allowed reply messages per minute
+    rate_limit=5
 
 Systemd
 *****************

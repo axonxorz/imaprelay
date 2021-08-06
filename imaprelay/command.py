@@ -47,6 +47,8 @@ def main():
                       config.get('relay', 'archive'),
                       config.getboolean('relay', 'autorespond'),
                       config.get('relay', 'autorespond_text'),
-                      config.get('smtp', 'address'))
+                      config.get('smtp', 'address'),
+                      config.getboolean('relay', 'rate_limit_active'),
+                      config.get('relay', 'rate_limit'))
     
     rly.loop(int(config.get('relay', 'interval')))

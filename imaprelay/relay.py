@@ -5,6 +5,7 @@ import socket
 import logging
 import datetime
 import time
+import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import make_msgid
@@ -24,7 +25,8 @@ class IMAPError(RelayError):
 class Relay(object):
     def __init__(self, to, inbox, archive, autorespond=False,
                  autorespond_text=None, smtp_address=None,
-                 rate_limit_active=True, rate_limit=5):
+                 rate_limit_active=True, rate_limit=5,
+                 reply_blacklist="no-reply@*;noreply@*"):
         self.to = to
         self.inbox = inbox
         self.archive = archive
@@ -35,6 +37,7 @@ class Relay(object):
         self.start_rate_period = datetime.datetime.now()
         self.rate_counter = 0
         self.rate_limit = rate_limit  # Reply mails per minute
+        self.reply_blacklist = reply_blacklist
 
     def relay(self):
         try:
@@ -120,6 +123,16 @@ class Relay(object):
             self.rate_counter = 1
             return True
 
+    def _check_blacklist(self, recipient):
+        rules = self.reply_blacklist.split(';')
+        compiled_rules = map(lambda x: re.compile(x, re.IGNORECASE), rules)
+        for s, r in zip(rules, compiled_rules):
+            m = r.match(recipient)
+            if m:
+                log.debug("Reply blocked, recipient {re} matched blacklist rule {ru}".format(re=recipient, ru=s))
+                return False
+        return True
+
     def _autorespond(self, message_ids):
         log.debug("Autoresponding messages {0}".format(message_ids))
 
@@ -143,6 +156,10 @@ class Relay(object):
                         pass
                     else:
                         break
+                if self._check_blacklist(autoreply['To']):
+                    pass
+                else:
+                    break
                 try:
                     res = self.smtp.sendmail(autoreply['From'], autoreply['To'], autoreply.as_bytes())
                     log.debug("Sent autorespond message '{subj}' from {from_} to {to}".format(

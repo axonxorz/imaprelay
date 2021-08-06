@@ -75,6 +75,8 @@ need to be set in the config file::
     rate_limit_active=yes
     # Allowed reply messages per minute
     rate_limit=5
+    # Recipient blacklist rules, separated by semicolons
+    reply_blacklist=no-reply@*;noreply@*
 
 Systemd
 *****************

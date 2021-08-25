@@ -151,15 +151,15 @@ class Relay(object):
                 autoreply['From'] = self.smtp_address
                 autoreply['To'] = eml['Reply-To'] or eml['From']
                 autoreply.attach(MIMEText(self.autorespond_text.replace("\\n", "\n"), 'plain'))
-                if self.rate_limit_active:
-                    if self._check_rate_limit():
-                        pass
-                    else:
-                        break
-                if self._check_blacklist(autoreply['To']):
-                    pass
-                else:
+
+                # do not send if rate limi exceeded
+                if self.rate_limit_active and not self._check_rate_limit():
+                    break
+                
+                # do not send if blacklisted
+                if not self._check_blacklist(autoreply['To']):
                     continue
+                    
                 try:
                     res = self.smtp.sendmail(autoreply['From'], autoreply['To'], autoreply.as_bytes())
                     log.debug("Sent autorespond message '{subj}' from {from_} to {to}".format(

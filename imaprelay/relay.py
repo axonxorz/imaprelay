@@ -159,7 +159,7 @@ class Relay(object):
                 if self._check_blacklist(autoreply['To']):
                     pass
                 else:
-                    break
+                    continue
                 try:
                     res = self.smtp.sendmail(autoreply['From'], autoreply['To'], autoreply.as_bytes())
                     log.debug("Sent autorespond message '{subj}' from {from_} to {to}".format(

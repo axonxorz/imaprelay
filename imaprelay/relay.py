@@ -106,13 +106,13 @@ class Relay(object):
                                                                               subj=eml['subject']))
 
         # Copy messages to archive folder
-        # self._chk(self.imap.copy(message_ids, self.archive))
+        self._chk(self.imap.copy(message_ids, self.archive))
 
         # Mark messages as deleted on server
-        # self._chk(self.imap.store(message_ids, '+FLAGS', r'(\Deleted)'))
+        self._chk(self.imap.store(message_ids, '+FLAGS', r'(\Deleted)'))
 
         # Expunge
-        # self._chk(self.imap.expunge())
+        self._chk(self.imap.expunge())
 
     def _check_rate_limit(self):
         interval = datetime.timedelta(minutes=1)

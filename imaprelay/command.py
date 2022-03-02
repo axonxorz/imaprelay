@@ -3,14 +3,14 @@ import logging
 import os
 import stat
 import sys
-try:
-    from StringIO import StringIO
-except:
-    from io import StringIO
+from io import StringIO
+
 from . import connection
 from . import relay
 
+
 log = logging.getLogger('imaprelay')
+
 
 DEFAULT_CONFIG = """\
 [relay]
@@ -20,6 +20,7 @@ interval=30
 autorespond=False
 autorespond_text=""
 """
+
 
 def main():
     if '-v' in sys.argv:

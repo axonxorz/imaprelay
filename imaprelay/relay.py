@@ -16,11 +16,14 @@ log = logging.getLogger(__name__)
 
 BATCH_SIZE = 10
 
+
 class RelayError(Exception):
     pass
 
+
 class IMAPError(RelayError):
     pass
+
 
 class Relay(object):
     def __init__(self, to, inbox, archive, autorespond=False,
@@ -78,7 +81,6 @@ class Relay(object):
             msg_slice = get_next_slice()
 
         return True
-
 
     def _relay_messages(self, message_ids):
         log.debug("Relaying messages {0}".format(message_ids))

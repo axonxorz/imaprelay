@@ -6,9 +6,11 @@ log = logging.getLogger(__name__)
 
 _config = None
 
+
 def configure(config):
     global _config
     _config = config
+
 
 def make_imap_connection():
     # Connect to the server
@@ -23,6 +25,7 @@ def make_imap_connection():
     connection.login(username, password)
 
     return connection
+
 
 def make_smtp_connection():
     # Connect to the server

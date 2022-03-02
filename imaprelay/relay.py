@@ -26,10 +26,16 @@ class IMAPError(RelayError):
 
 
 class Relay(object):
-    def __init__(self, to, inbox, archive, autorespond=False,
-                 autorespond_text=None, smtp_address=None,
-                 rate_limit_active=True, rate_limit=5,
-                 reply_blacklist="no-reply@*;noreply@*"):
+    def __init__(self,
+                 to: str,
+                 inbox: str,
+                 archive: str,
+                 autorespond: bool = False,
+                 autorespond_text: str = None,
+                 smtp_address: str = None,
+                 rate_limit_active: bool = True,
+                 rate_limit: int = 5,
+                 reply_blacklist: str = "no-reply@*;noreply@*"):
         self.to = to
         self.inbox = inbox
         self.archive = archive
@@ -64,7 +70,7 @@ class Relay(object):
 
         data = self._chk(self.imap.select(self.inbox))
 
-        log.info('Relaying {num} messages from {inbox}'.format(num=data[0], inbox=self.inbox))
+        log.info('Relaying {num} messages from {inbox}'.format(num=data[0].decode(), inbox=self.inbox))
 
         # Take BATCH_SIZE messages and relay them
         def get_next_slice():

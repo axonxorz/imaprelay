@@ -12,16 +12,6 @@ from . import relay
 log = logging.getLogger('imaprelay')
 
 
-DEFAULT_CONFIG = """\
-[relay]
-inbox=INBOX
-archive=Archive
-interval=30
-autorespond=False
-autorespond_text=""
-"""
-
-
 def main():
     if '-v' in sys.argv:
         log.setLevel(logging.DEBUG)
@@ -31,26 +21,30 @@ def main():
         configfile = os.path.expanduser('~/.secret/imaprelay.cfg')
     log.info("Config loaded from {}".format(configfile))
 
-    st = os.stat(configfile)
-    if bool(st.st_mode & (stat.S_IRGRP | stat.S_IROTH)):
-        raise Exception("Config file (%s) appears to be group- or "
-                        "world-readable. Please `chmod 400` or similar."
-                        % configfile)
+    try:
+        st = os.stat(configfile)
+        if bool(st.st_mode & (stat.S_IRGRP | stat.S_IROTH)):
+            log.warning(f'Config file {configfile} is group or world readable, this could leak secrets')
+    except FileNotFoundError as exc:
+        raise Exception('Could not find a valid configuration file') from exc
 
     config = configparser.ConfigParser()
-    config.readfp(StringIO(DEFAULT_CONFIG))
     config.read([configfile])
 
     connection.configure(config)
 
-    rly = relay.Relay(config.get('relay', 'to'),
-                      config.get('relay', 'inbox'),
-                      config.get('relay', 'archive'),
-                      config.getboolean('relay', 'autorespond'),
-                      config.get('relay', 'autorespond_text'),
-                      config.get('smtp', 'address'),
-                      config.getboolean('relay', 'rate_limit_active'),
-                      config.get('relay', 'rate_limit'),
-                      config.get('relay', 'reply_blacklist'))
+    rly = relay.Relay(to=config.get('relay', 'to'),
+                      inbox=config.get('relay', 'inbox'),
+                      archive=config.get('relay', 'archive'),
+                      autorespond=config.getboolean('relay', 'autorespond'),
+                      autorespond_text=config.get('relay', 'autorespond_text'),
+                      smtp_address=config.get('smtp', 'hostname'),
+                      rate_limit_active=config.getboolean('relay', 'rate_limit_active'),
+                      rate_limit=int(config.get('relay', 'rate_limit')),
+                      reply_blacklist=config.get('relay', 'reply_blacklist'))
     
     rly.loop(int(config.get('relay', 'interval')))
+
+
+if __name__ == '__main__':
+    main()

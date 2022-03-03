@@ -3,12 +3,7 @@ import imaplib
 import smtplib
 import socket
 import logging
-import datetime
 import time
-import re
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import make_msgid
 from .import util
 from .connection import make_imap_connection, make_smtp_connection
 
@@ -30,23 +25,11 @@ class Relay(object):
                  to: str,
                  inbox: str,
                  archive: str,
-                 autorespond: bool = False,
-                 autorespond_text: str = None,
-                 smtp_address: str = None,
-                 rate_limit_active: bool = True,
-                 rate_limit: int = 5,
-                 reply_blacklist: str = "no-reply@*;noreply@*"):
+                 smtp_address: str = None):
         self.to = to
         self.inbox = inbox
         self.archive = archive
-        self.autorespond = autorespond
-        self.autorespond_text = autorespond_text
         self.smtp_address = smtp_address
-        self.rate_limit_active = rate_limit_active
-        self.start_rate_period = datetime.datetime.now()
-        self.rate_counter = 0
-        self.rate_limit = rate_limit  # Reply mails per minute
-        self.reply_blacklist = reply_blacklist
 
     def relay(self):
         try:
@@ -56,7 +39,7 @@ class Relay(object):
 
     def _relay(self):
         if not self._open_connections():
-            log.warn("Aborting relay attempt")
+            log.warning("Aborting relay attempt")
             return False
 
         data = self._chk(self.imap.list())
@@ -81,8 +64,6 @@ class Relay(object):
 
         msg_slice = get_next_slice()
         while msg_slice:
-            if self.autorespond:
-                self._autorespond(msg_slice)
             self._relay_messages(msg_slice)
             msg_slice = get_next_slice()
 
@@ -113,69 +94,6 @@ class Relay(object):
 
         # Expunge
         self._chk(self.imap.expunge())
-
-    def _check_rate_limit(self):
-        interval = datetime.timedelta(minutes=1)
-        time_delta = datetime.datetime.now() - self.start_rate_period
-        if time_delta < interval:
-            if self.rate_counter < self.rate_limit:
-                log.debug("No rate limit, only {num} messages sent this period".format(num=self.rate_counter))
-                self.rate_counter += 1
-                return True
-            else:
-                log.debug("Reply blocked, rate this period exceeded")
-                return False
-        else:
-            self.start_rate_period = datetime.datetime.now()
-            log.debug("No rate limit, only 0  messages sent this period")
-            self.rate_counter = 1
-            return True
-
-    def _check_blacklist(self, recipient):
-        rules = self.reply_blacklist.split(';')
-        compiled_rules = map(lambda x: re.compile(x, re.IGNORECASE), rules)
-        for s, r in zip(rules, compiled_rules):
-            m = r.match(recipient)
-            if m:
-                log.debug("Reply blocked, recipient {re} matched blacklist rule {ru}".format(re=recipient, ru=s))
-                return False
-        return True
-
-    def _autorespond(self, message_ids):
-        log.debug("Autoresponding messages {0}".format(message_ids))
-
-        # Get messages and relay them
-        message_ids = ','.join(message_ids)
-        msg_data = self._chk(self.imap.fetch(message_ids, '(RFC822)'))
-
-        for response_part in msg_data:
-            if isinstance(response_part, tuple):
-                eml = email.message_from_bytes(response_part[1])
-                autoreply = MIMEMultipart('alternative')
-                autoreply['Message-ID'] = make_msgid()
-                autoreply['References'] = eml['Message-ID']
-                autoreply['In-Reply-To'] = eml['Message-ID']
-                autoreply['Subject'] = f"Re: {eml['Subject']}"
-                autoreply['From'] = self.smtp_address
-                autoreply['To'] = eml['Reply-To'] or eml['From']
-                autoreply.attach(MIMEText(self.autorespond_text.replace("\\n", "\n"), 'plain'))
-
-                # do not send if rate limi exceeded
-                if self.rate_limit_active and not self._check_rate_limit():
-                    break
-                
-                # do not send if blacklisted
-                if not self._check_blacklist(autoreply['To']):
-                    continue
-                    
-                try:
-                    res = self.smtp.sendmail(autoreply['From'], autoreply['To'], autoreply.as_bytes())
-                    log.debug("Sent autorespond message '{subj}' from {from_} to {to}".format(
-                        from_=autoreply['From'],
-                        to=autoreply['To'],
-                        subj=autoreply['Subject']))
-                except Exception as e:
-                    log.error("Failed to autoreply to {to}. Maybe its a noreply address? {e}".format(to=autoreply['To'], e=e))
 
     def loop(self, interval=30):
         try:

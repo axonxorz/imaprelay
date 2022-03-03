@@ -12,6 +12,9 @@ from . import relay
 log = logging.getLogger('imaprelay')
 
 
+DEFAULT_RELAY_INTERVAL = 60
+
+
 def main():
     if '-v' in sys.argv:
         log.setLevel(logging.DEBUG)
@@ -36,14 +39,17 @@ def main():
     rly = relay.Relay(to=config.get('relay', 'to'),
                       inbox=config.get('relay', 'inbox'),
                       archive=config.get('relay', 'archive'),
-                      autorespond=config.getboolean('relay', 'autorespond'),
-                      autorespond_text=config.get('relay', 'autorespond_text'),
-                      smtp_address=config.get('smtp', 'hostname'),
-                      rate_limit_active=config.getboolean('relay', 'rate_limit_active'),
-                      rate_limit=int(config.get('relay', 'rate_limit')),
-                      reply_blacklist=config.get('relay', 'reply_blacklist'))
-    
-    rly.loop(int(config.get('relay', 'interval')))
+                      smtp_address=config.get('smtp', 'username'))
+
+    try:
+        interval = int(config.get('relay', 'interval'))
+    except ValueError:
+        log.warning(f'Could not parse relay interval {DEFAULT_RELAY_INTERVAL}s')
+    except configparser.NoOptionError:
+        log.warning(f'Relay interval not provided, using default of {DEFAULT_RELAY_INTERVAL}s')
+        interval = 60
+
+    rly.loop(interval)
 
 
 if __name__ == '__main__':

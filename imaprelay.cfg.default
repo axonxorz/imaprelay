@@ -1,0 +1,21 @@
+# IMAP server connection details
+[imap]
+hostname=imap.exchange.megacorp.com
+username=j.bloggs
+password=123password
+
+# SMTP server connection details
+[smtp]
+hostname=mail.recipient.com
+username=joe_bloggs
+password=passw0rd
+
+# Relay configuration
+[relay]
+# Who should we relay the emails to?
+to=onward@recipient.com
+# Where should we look for emails to be relayed?
+inbox=INBOX
+# Where should we move the emails once successfully relayed?
+archive=Archive
+

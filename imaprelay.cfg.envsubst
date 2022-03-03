@@ -1,0 +1,22 @@
+# IMAP server connection details
+[imap]
+hostname=${IMAP_HOSTNAME}
+username=${IMAP_USERNAME}
+password=${IMAP_PASSWORD}
+
+# SMTP server connection details
+[smtp]
+hostname=${SMTP_HOSTNAME}
+username=${SMTP_USERNAME}
+password=${SMTP_PASSWORD}
+
+# Relay configuration
+[relay]
+# Who should we relay the emails to?
+to=${RELAY_TO}
+# Where should we look for emails to be relayed?
+inbox=${MESSAGE_SOURCE}
+# Where should we move the emails once successfully relayed?
+archive=${MESSAGE_DESTINATION}
+
+interval=${POLLING_INTERVAL}

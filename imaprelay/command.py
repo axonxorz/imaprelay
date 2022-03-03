@@ -49,7 +49,7 @@ def main():
         log.warning(f'Relay interval not provided, using default of {DEFAULT_RELAY_INTERVAL}s')
         interval = 60
 
-    rly.loop(interval)
+    rly.loop(int(config.get('relay', 'interval')))
 
 
 if __name__ == '__main__':

@@ -46,6 +46,7 @@ def main():
         interval = int(interval)
     except ValueError:
         log.warning(f'Could not parse relay interval {interval}s, using default of {DEFAULT_RELAY_INTERVAL}s')
+        interval = DEFAULT_RELAY_INTERVAL
     except configparser.NoOptionError:
         log.warning(f'Relay interval not provided, using default of {DEFAULT_RELAY_INTERVAL}s')
 

@@ -9,6 +9,8 @@ password=${IMAP_PASSWORD}
 hostname=${SMTP_HOSTNAME}
 username=${SMTP_USERNAME}
 password=${SMTP_PASSWORD}
+ssl=${SMTP_SSL}
+starttls=${SMTP_STARTTLS}
 
 # Relay configuration
 [relay]

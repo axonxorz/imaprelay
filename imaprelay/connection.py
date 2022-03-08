@@ -2,6 +2,9 @@ import imaplib
 import smtplib
 import logging
 
+from imaprelay.util import asbool
+
+
 log = logging.getLogger(__name__)
 
 _config = None
@@ -30,13 +33,35 @@ def make_imap_connection():
 def make_smtp_connection():
     # Connect to the server
     hostname = _config.get('smtp', 'hostname')
+    port = None
+    if ':' in hostname:
+        hostname, port = hostname.split(':')
     log.info('Connecting to SMTP server {0}'.format(hostname))
-    connection = smtplib.SMTP_SSL(hostname)
+    smtp_ssl = asbool(_config.get('smtp', 'ssl'))
+    smtp_starttls = asbool(_config.get('smtp', 'starttls'))
+
+    if smtp_ssl and smtp_starttls:
+        raise ValueError('Cannot use SSL and STARTTLS')
+
+    if smtp_ssl:
+        smtp_cls = smtplib.SMTP_SSL
+    else:
+        smtp_cls = smtplib.SMTP
+
+    conn_args = [hostname]
+    if port is not None:
+        conn_args.append(port)
+    connection = smtp_cls(*conn_args)
+    connection.ehlo()
+
+    if smtp_starttls:
+        connection.starttls()
 
     # Login to our account
     username = _config.get('smtp', 'username')
     password = _config.get('smtp', 'password')
-    log.info('Logging in to SMTP as {0}'.format(username))
-    connection.login(username, password)
+    if username and password:
+        log.info('Logging in to SMTP as {0}'.format(username))
+        connection.login(username, password)
 
     return connection

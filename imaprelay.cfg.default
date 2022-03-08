@@ -9,6 +9,8 @@ password=123password
 hostname=mail.recipient.com
 username=joe_bloggs
 password=passw0rd
+ssl=false
+starttls=true
 
 # Relay configuration
 [relay]

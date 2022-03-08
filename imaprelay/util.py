@@ -12,3 +12,9 @@ def parse_folder_line(line):
     mailbox_name = mailbox_name.strip('"')
     return flags, delimiter, mailbox_name
 
+
+def asbool(value):
+    if value is None:
+        return False
+    value = value.lower()
+    return value.startswith('1') or value.startswith('y') or value.startswith('t')

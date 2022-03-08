@@ -3,7 +3,6 @@ import logging
 import os
 import stat
 import sys
-from io import StringIO
 
 from . import connection
 from . import relay
@@ -41,15 +40,16 @@ def main():
                       archive=config.get('relay', 'archive'),
                       smtp_address=config.get('smtp', 'username'))
 
+    interval = DEFAULT_RELAY_INTERVAL
     try:
-        interval = int(config.get('relay', 'interval'))
+        interval = config.get('relay', 'interval')
+        interval = int(interval)
     except ValueError:
-        log.warning(f'Could not parse relay interval {DEFAULT_RELAY_INTERVAL}s')
+        log.warning(f'Could not parse relay interval {interval}s, using default of {DEFAULT_RELAY_INTERVAL}s')
     except configparser.NoOptionError:
         log.warning(f'Relay interval not provided, using default of {DEFAULT_RELAY_INTERVAL}s')
-        interval = 60
 
-    rly.loop(int(config.get('relay', 'interval')))
+    rly.loop(interval)
 
 
 if __name__ == '__main__':

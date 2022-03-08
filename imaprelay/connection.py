@@ -33,15 +33,13 @@ def make_imap_connection():
 def make_smtp_connection():
     # Connect to the server
     hostname = _config.get('smtp', 'hostname')
-    port = None
-    if ':' in hostname:
-        hostname, port = hostname.split(':')
-    log.info('Connecting to SMTP server {0}'.format(hostname))
     smtp_ssl = asbool(_config.get('smtp', 'ssl'))
     smtp_starttls = asbool(_config.get('smtp', 'starttls'))
 
     if smtp_ssl and smtp_starttls:
         raise ValueError('Cannot use SSL and STARTTLS')
+
+    log.info('Connecting to SMTP server {0} (ssl={1}, starttls={2})'.format(hostname, smtp_ssl, smtp_starttls))
 
     if smtp_ssl:
         smtp_cls = smtplib.SMTP_SSL
@@ -49,8 +47,6 @@ def make_smtp_connection():
         smtp_cls = smtplib.SMTP
 
     conn_args = [hostname]
-    if port is not None:
-        conn_args.append(port)
     connection = smtp_cls(*conn_args)
     connection.ehlo()
 
